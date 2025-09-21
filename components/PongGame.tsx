@@ -4,11 +4,9 @@ import { useEffect, useRef, useState } from "react";
 const PongGame = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  // State for score
   const [leftScore, setLeftScore] = useState(0);
   const [rightScore, setRightScore] = useState(0);
 
-  // Sound effect
   const beepSound = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
@@ -25,15 +23,27 @@ const PongGame = () => {
 
     let leftPaddleY = (canvas.height - paddleHeight) / 2;
     let rightPaddleY = (canvas.height - paddleHeight) / 2;
-    const paddleSpeed = 5;
+    const paddleSpeed = 6;
 
     let ballX = canvas.width / 2;
     let ballY = canvas.height / 2;
-    let ballRadius = 8;
-    let ballSpeedX = 4;
+    const ballRadius = 8;
+    let ballSpeedX = 5;
     let ballSpeedY = 4;
 
     const keys: Record<string, boolean> = {};
+
+    const resetBall = (scorer: "left" | "right") => {
+      if (scorer === "left") setLeftScore((s) => s + 1);
+      if (scorer === "right") setRightScore((s) => s + 1);
+
+      beepSound.current?.play();
+
+      ballX = canvas.width / 2;
+      ballY = canvas.height / 2;
+      ballSpeedX *= -1; // send ball toward other player
+      ballSpeedY = 4 * (Math.random() > 0.5 ? 1 : -1);
+    };
 
     const draw = () => {
       ctx.fillStyle = "#0f172a";
@@ -50,28 +60,18 @@ const PongGame = () => {
       ctx.fill();
     };
 
-    const resetBall = (scorer: "left" | "right") => {
-      if (scorer === "left") setLeftScore((s) => s + 1);
-      if (scorer === "right") setRightScore((s) => s + 1);
-
-      beepSound.current?.play();
-
-      ballX = canvas.width / 2;
-      ballY = canvas.height / 2;
-      ballSpeedX *= -1;
-      ballSpeedY = 4 * (Math.random() > 0.5 ? 1 : -1);
-    };
-
     const update = () => {
-      // 🎮 Computer-controlled left paddle (follows the ball)
-      const aiSpeed = 3;
+      // 🎮 AI controls left paddle
+      const aiSpeed = 4; // increase for harder AI
       const leftPaddleCenter = leftPaddleY + paddleHeight / 2;
+
       if (ballY < leftPaddleCenter - 10) leftPaddleY -= aiSpeed;
-      else if (ballY > leftPaddleCenter + 10) leftPaddleY += aiSpeed;
+      if (ballY > leftPaddleCenter + 10) leftPaddleY += aiSpeed;
 
       // ✅ Human player controls right paddle
       if (keys["ArrowUp"] && rightPaddleY > 0) rightPaddleY -= paddleSpeed;
-      if (keys["ArrowDown"] && rightPaddleY < canvas.height - paddleHeight) rightPaddleY += paddleSpeed;
+      if (keys["ArrowDown"] && rightPaddleY < canvas.height - paddleHeight)
+        rightPaddleY += paddleSpeed;
 
       // Ball movement
       ballX += ballSpeedX;
@@ -151,7 +151,7 @@ const PongGame = () => {
         Restart
       </button>
 
-      {/* One Beep Sound */}
+      {/* Beep Sound */}
       <audio ref={beepSound} src="beep.mp3" preload="auto" />
     </div>
   );
