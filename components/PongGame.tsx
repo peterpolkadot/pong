@@ -7,6 +7,9 @@ const PongGame = () => {
   const [leftScore, setLeftScore] = useState(0);
   const [rightScore, setRightScore] = useState(0);
 
+  // Difficulty selector
+  const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard">("medium");
+
   const beepSound = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
@@ -62,13 +65,29 @@ const PongGame = () => {
 
     const update = () => {
       // 🎮 AI controls left paddle
-      const aiSpeed = 4; // increase for harder AI
+      let aiSpeed = 2;
+      let errorMargin = 25;
+
+      if (difficulty === "medium") {
+        aiSpeed = 3;
+        errorMargin = 15;
+      } else if (difficulty === "hard") {
+        aiSpeed = 5;
+        errorMargin = 5;
+      }
+
       const leftPaddleCenter = leftPaddleY + paddleHeight / 2;
 
-      if (ballY < leftPaddleCenter - 10) leftPaddleY -= aiSpeed;
-      if (ballY > leftPaddleCenter + 10) leftPaddleY += aiSpeed;
+      if (Math.abs(ballX - canvas.width / 2) < 200) {
+        // react only when ball is past midcourt
+        if (ballY < leftPaddleCenter - errorMargin) leftPaddleY -= aiSpeed;
+        else if (ballY > leftPaddleCenter + errorMargin) leftPaddleY += aiSpeed;
+      } else {
+        // idle wiggle for realism
+        if (Math.random() > 0.98) leftPaddleY += Math.random() > 0.5 ? 4 : -4;
+      }
 
-      // ✅ Human player controls right paddle
+      // ✅ Human controls right paddle
       if (keys["ArrowUp"] && rightPaddleY > 0) rightPaddleY -= paddleSpeed;
       if (keys["ArrowDown"] && rightPaddleY < canvas.height - paddleHeight)
         rightPaddleY += paddleSpeed;
@@ -125,7 +144,7 @@ const PongGame = () => {
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
     };
-  }, []);
+  }, [difficulty]); // ✅ re-run effect when difficulty changes
 
   const restartGame = () => {
     setLeftScore(0);
@@ -138,6 +157,23 @@ const PongGame = () => {
       <div className="flex space-x-8 text-2xl font-bold">
         <span>🤖 {leftScore}</span>
         <span>👤 {rightScore}</span>
+      </div>
+
+      {/* Difficulty Selector */}
+      <div className="flex space-x-2">
+        {["easy", "medium", "hard"].map((level) => (
+          <button
+            key={level}
+            onClick={() => setDifficulty(level as "easy" | "medium" | "hard")}
+            className={`px-3 py-1 rounded-lg text-sm font-semibold ${
+              difficulty === level
+                ? "bg-green-600 text-white"
+                : "bg-gray-600 hover:bg-gray-700 text-gray-200"
+            }`}
+          >
+            {level.toUpperCase()}
+          </button>
+        ))}
       </div>
 
       {/* Game Canvas */}
